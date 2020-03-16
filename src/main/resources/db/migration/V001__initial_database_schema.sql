@@ -16,7 +16,7 @@ create TABLE sheet_name(
 
 create TABLE sharing_group(
   id                      UUID PRIMARY KEY,
-  author_id               UUID NOT NULL references user_email,
+  author_id               UUID NOT NULL references user_email ON DELETE CASCADE,
   permission_read         BOOLEAN NOT NULL default TRUE,
   permission_write        BOOLEAN NOT NULL default FALSE,
   permission_share        BOOLEAN NOT NULL default FALSE,
@@ -25,7 +25,7 @@ create TABLE sharing_group(
 
 create TABLE data_reference(
   id                      UUID PRIMARY KEY,
-  sharing_group_id        UUID NOT NULL references sharing_group,
+  sharing_group_id        UUID NOT NULL references sharing_group ON DELETE CASCADE,
   file_id                 TEXT NOT NULL,
   sheet_id                UUID references sheet_name,
   range_cells_set         VARCHAR,
@@ -33,5 +33,13 @@ create TABLE data_reference(
   created_at              TIMESTAMP WITH TIME ZONE NOT NULL default 'now()'
 
 );
+
+create TABLE rel_sharing_group_users(
+  id                      UUID PRIMARY KEY,
+  sharing_group_id        UUID NOT NULL references sharing_group ON DELETE CASCADE,
+  user_id                 UUID references user_email,
+  created_at              TIMESTAMP WITH TIME ZONE NOT NULL default 'now()'
+  );
+
 
 

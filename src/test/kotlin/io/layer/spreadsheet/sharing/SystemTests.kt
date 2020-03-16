@@ -6,11 +6,12 @@ import io.layer.spreadsheet.sharing.api.DataCell
 import io.layer.spreadsheet.sharing.api.DataFile
 import io.layer.spreadsheet.sharing.api.DataRange
 import io.layer.spreadsheet.sharing.api.DataSheet
+import io.layer.spreadsheet.sharing.api.FileReference
 import io.layer.spreadsheet.sharing.api.Permission
 import io.layer.spreadsheet.sharing.api.RangeReference
 import io.layer.spreadsheet.sharing.api.SharingGroup
 import io.layer.spreadsheet.sharing.component.RestPaths
-import io.layer.spreadsheet.sharing.component.SharingCommandResolver
+import io.layer.spreadsheet.sharing.component.SharingGroupRepository
 import io.layer.spreadsheet.sharing.component.SharingQueryResolver
 import io.layer.spreadsheet.sharing.component.UserIdRepo
 import org.amshove.kluent.shouldBe
@@ -18,22 +19,19 @@ import org.amshove.kluent.shouldBeEqualTo
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.returnResult
 import java.util.UUID
 import kotlin.random.Random
 import kotlin.streams.toList
 
-@ActiveProfiles("db")
 @SpringBootTest(classes = [SharingMicroservice::class])
 class SystemTests {
 
-    @Autowired
-    lateinit var userIdRepo: UserIdRepo
-
     private val id = { UUID.randomUUID().toString() }
     private val port = Random.nextInt(9_000, 10_000)
+    @Autowired lateinit var sharingGroupRepository: SharingGroupRepository
+    @Autowired lateinit var userIdRepo: UserIdRepo
 
 
     @Test
@@ -47,20 +45,16 @@ class SystemTests {
         command shouldBeEqualTo commandFromJson
     }
 
-    @Test
-    fun testUserServices(){
-        val email = "foo@bar.com"
-        val userId = userIdRepo.getUserId(email)
-        val existingId = userIdRepo.getUserId(email)
-        userId shouldBeEqualTo existingId
-    }
+
 
     @Test
     fun cqrsResolversTest() {
-        val commandSvc = SharingCommandResolver()
+        val userId = userIdRepo.getUserId("foo@bar.com")
+        val anotherUserId = userIdRepo.getUserId("another@bar.com")
+        val commandSvc = sharingGroupRepository
         val querySvc = SharingQueryResolver()
 
-        val command = buildAddPermissionCommand()
+        val command = buildFilePermissionCommand(userId, anotherUserId)
         commandSvc.startSharing(command)
         val shares = querySvc.fetchByDataReference(command.dataReference).toList()
         shares.first().data.first() shouldBe command.dataReference
@@ -77,6 +71,14 @@ class SystemTests {
         querySvc.fetchByAuthorId(command.authorId).toList().isEmpty() shouldBe true
         querySvc.fetchByDataReference(command.dataReference).toList().isEmpty() shouldBe true
     }
+
+    private fun buildFilePermissionCommand(userId: String, anotherUserId: String): AddPermissionCommand {
+        val file = DataFile(id(), "testFile", userId)
+        val dataReference = FileReference(fileId = file.id)
+
+        return AddPermissionCommand(id(), file.authorId, dataReference, Permission.WRITE, setOf(anotherUserId))
+    }
+
 
     private fun buildAddPermissionCommand(): AddPermissionCommand {
         val anotherUserId = id()

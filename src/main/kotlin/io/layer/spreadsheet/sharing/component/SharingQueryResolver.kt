@@ -1,5 +1,6 @@
 package io.layer.spreadsheet.sharing.component
 
+import io.layer.spreadsheet.sharing.api.DataRange
 import io.layer.spreadsheet.sharing.component.SharingCommandResolver.Companion.referenceCache
 import io.layer.spreadsheet.sharing.api.DataReference
 import io.layer.spreadsheet.sharing.api.SharingGroup
@@ -10,7 +11,7 @@ import java.util.stream.Stream
 @Service
 class SharingQueryResolver: SharingQueryService<Stream<SharingGroup>> {
 
-    override fun fetchByDataReference(dataReference: DataReference<String, Any>): Stream<SharingGroup> {
+    override fun fetchByDataReference(dataReference: DataReference<String, DataRange?>): Stream<SharingGroup> {
         return referenceCache[dataReference.hashCode()]?.stream()?: Stream.empty()
     }
 

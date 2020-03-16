@@ -18,6 +18,9 @@ data class DataRange(
             cellSet != null && cellSet.isNotEmpty() -> DataRange(cellSet = cellSet)
             else -> DataRange(cellRange = cellRange!!)
         }
+
+        fun fromStringSet(daString: String) = DataRange(setOf(), setOf())
+        fun fromStringBetween(daString: String) = DataRange(setOf(), setOf())
     }
 }
 
@@ -32,7 +35,7 @@ interface Permission {
         val SHARE: Permission = SharePermission(read = true, write = true, share = true)
         @JsonCreator
         @JvmStatic
-        fun creator(read: Boolean, write: Boolean, share: Boolean): Permission = when {
+        fun of(read: Boolean, write: Boolean, share: Boolean): Permission = when {
             share && write && read -> SHARE
             write && read -> WRITE
             read -> READ
@@ -100,7 +103,7 @@ data class RangeReference(
 data class AddPermissionCommand(
         val sharingGroupId: String,
         val authorId: String,
-        val dataReference: DataReference<String, Any>,
+        val dataReference: DataReference<String, DataRange?>,
         val permission: Permission,
         val users: Set<String>
 )
@@ -110,7 +113,7 @@ data class SharingGroup(
         val authorId: String,
         val permission: Permission = Permission.READ,
         val users: Set<String>,
-        val data: Set<DataReference<String, Any>>
+        val data: Set<DataReference<String, DataRange?>>
 )
 
 

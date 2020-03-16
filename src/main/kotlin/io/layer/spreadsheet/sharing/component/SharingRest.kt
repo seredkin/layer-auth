@@ -1,6 +1,7 @@
 package io.layer.spreadsheet.sharing.component
 
 import io.layer.spreadsheet.sharing.api.AddPermissionCommand
+import io.layer.spreadsheet.sharing.api.DataRange
 import io.layer.spreadsheet.sharing.api.DataReference
 import io.layer.spreadsheet.sharing.api.SharingCommandService
 import io.layer.spreadsheet.sharing.api.SharingGroup
@@ -32,7 +33,7 @@ class SharingRest(
     }
 
     @PostMapping(RestPaths.fetchByDataReference)
-    override fun fetchByDataReference(@RequestBody dataReference: DataReference<String, Any>): Flux<SharingGroup> {
+    override fun fetchByDataReference(@RequestBody dataReference: DataReference<String, DataRange?>): Flux<SharingGroup> {
         return Flux.fromStream(sharingQueryService.fetchByDataReference(dataReference))
     }
 
