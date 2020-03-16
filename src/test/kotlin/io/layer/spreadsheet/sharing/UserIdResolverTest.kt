@@ -14,16 +14,16 @@ class UserIdResolverTest {
     )
 
     @Test
-    fun testIdGenResolve() {
+    fun testUserIdGenResolve() {
         val userIdResolver = UserIdResolver()
 
         //Collect a list of new IDs
         val ids = emails.map {
             userIdResolver.getUserId(it)
-        }.toList()
+        }.toSet()
 
         //Shouldn't duplicate
-        ids.toSet().size shouldBe emails.size
+        ids.size shouldBe emails.size
 
         //Check return of existing IDs
         emails.forEach { email ->

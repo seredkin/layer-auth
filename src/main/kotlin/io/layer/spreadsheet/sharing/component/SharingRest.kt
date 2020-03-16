@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.util.stream.Stream
 
 @RestController("/")
 class SharingRest(
@@ -42,6 +43,10 @@ class SharingRest(
 
     @GetMapping(RestPaths.ping)
     fun pingPong() = Mono.just("pong")
+
+    override fun fetchBySharingGroupId(sharingGroupId: String): Stream<SharingGroup> {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
 }
 
 internal object RestPaths {

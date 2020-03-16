@@ -19,7 +19,7 @@ class SharingCommandResolver: SharingCommandService<AddPermissionCommand, DataRe
 
     override fun startSharing(pc: AddPermissionCommand) {
         val sharingGroup = SharingGroup(
-                id = pc.groupSharingId,
+                id = pc.sharingGroupId,
                 authorId = pc.authorId,
                 permission = pc.permission,
                 users = pc.users,

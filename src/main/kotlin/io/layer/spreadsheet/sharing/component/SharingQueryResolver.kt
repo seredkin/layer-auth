@@ -17,4 +17,8 @@ class SharingQueryResolver: SharingQueryService<Stream<SharingGroup>> {
     override fun fetchByAuthorId(authorId: String): Stream<SharingGroup> {
         return referenceCache.values.stream().flatMap { it.stream() }.filter { it.authorId == authorId }
     }
+
+    override fun fetchBySharingGroupId(sharingGroupId: String): Stream<SharingGroup>{
+        return referenceCache.values.stream().flatMap { it.stream() }.filter { it.id == sharingGroupId }
+    }
 }
