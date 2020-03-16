@@ -5,9 +5,9 @@ import io.layer.spreadsheet.sharing.api.AddPermissionCommand
 import io.layer.spreadsheet.sharing.api.DataCell
 import io.layer.spreadsheet.sharing.api.DataFile
 import io.layer.spreadsheet.sharing.api.DataRange
-import io.layer.spreadsheet.sharing.api.DataReference
 import io.layer.spreadsheet.sharing.api.DataSheet
 import io.layer.spreadsheet.sharing.api.Permission
+import io.layer.spreadsheet.sharing.api.RangeReference
 import io.layer.spreadsheet.sharing.api.SharingGroup
 import io.layer.spreadsheet.sharing.component.RestPaths
 import org.amshove.kluent.shouldBeEqualTo
@@ -29,30 +29,21 @@ class SharingMicroserviceTests {
         val mapper = ObjectMapper().findAndRegisterModules()
         val command = buildAddPermissionCommand()
         val json = mapper.writeValueAsString(command)
-        println(json)
         val commandFromJson = mapper.readValue(json, AddPermissionCommand::class.java)
 
-        command.authorId shouldBeEqualTo commandFromJson.authorId
-        command.users shouldBeEqualTo commandFromJson.users
-        command.permission shouldBeEqualTo commandFromJson.permission
-        //TODO Figure out sealed class DataReference.equals
-        command.dataReference.fileId shouldBeEqualTo commandFromJson.dataReference.fileId
-        command.dataReference.sheetId shouldBeEqualTo commandFromJson.dataReference.sheetId
-        command.dataReference.range shouldBeEqualTo commandFromJson.dataReference.range
-
+        command shouldBeEqualTo commandFromJson
     }
 
     private fun buildAddPermissionCommand(): AddPermissionCommand {
         val anotherUserId = id()
         val file = DataFile(id(), "testFile", id())
-        val sheet = DataSheet(id(), file.id)
+        val sheet = DataSheet(id(), file.id, "blank")
         val range = DataRange(setOf(DataCell(0, 0, sheet.id), DataCell(1, 0, sheet.id)))
-        val dataReference = DataReference.RangeReference(file.id, sheet.id, range)
+        val dataReference = RangeReference(file.id, sheet.id, range)
 
         return AddPermissionCommand(id(), file.authorId, dataReference, Permission.WRITE, setOf(anotherUserId))
     }
 
-    @Test
     fun contextLoads() {
         val ctx = SharingMicroservice.bootStrap(arrayOf("--server.port=$port"))
         val webClient = WebTestClient.bindToApplicationContext(ctx).build()
@@ -64,9 +55,9 @@ class SharingMicroserviceTests {
         val authorId = id()
         val anotherUserId = id()
         val file = DataFile(id(), "testFile", authorId)
-        val sheet = DataSheet(id(), file.id)
+        val sheet = DataSheet(id(), file.id, "blank")
         val range = DataRange(setOf(DataCell(0, 0, sheet.id), DataCell(1, 0, sheet.id)))
-        val dataReference = DataReference.RangeReference(file.id, sheet.id, range)
+        val dataReference = RangeReference(file.id, sheet.id, range)
 
         val command = AddPermissionCommand(
                 id(), authorId, dataReference, Permission.READ, setOf(anotherUserId)

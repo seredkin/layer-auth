@@ -1,27 +1,21 @@
 package io.layer.spreadsheet.sharing.api
 
 import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonIgnore
 
 data class DataFile(val id: String, val name: String, val authorId: String)
-data class DataSheet(val id: String, @JsonIgnore val fileId: String)
+data class DataSheet(val id: String, val fileId: String, val name: String)
 data class DataCell(val x: Int, val y: Int, val sheetId: String)
 data class DataRange(val cells: Set<DataCell> = setOf())
 //TODO consider DataRange<Pair<DataCell, DataCell>>
 
-sealed class Permission(
-        val read: Boolean,
-        val write: Boolean,
-        val share: Boolean
-) {
-    private class ReadPermission : Permission(true, false, false)
-    private class WritePermission : Permission(true, true, false)
-    private class SharePermission : Permission(true, true, true)
-
+interface Permission {
+    val read: Boolean
+    val write: Boolean
+    val share: Boolean
     companion object {
-        val SHARE: Permission = SharePermission()
-        val WRITE: Permission = WritePermission()
-        val READ: Permission = ReadPermission()
+        val READ: Permission = ReadPermission(true, false, false)
+        val WRITE: Permission = WritePermission(true, true, false)
+        val SHARE: Permission = SharePermission(true, true, true)
         @JsonCreator
         @JvmStatic
         fun creator(read: Boolean, write: Boolean, share: Boolean): Permission = when {
@@ -33,31 +27,40 @@ sealed class Permission(
     }
 }
 
-sealed class DataReference<S, out D>(
-        val fileId: S,
-        val sheetId: S?,
-        val range: D?
-) {
-    class FileReference(fileId: String)
-        : DataReference<String, Nothing>(fileId, null, null)
+private class ReadPermission(override val read: Boolean, override val write: Boolean, override val share: Boolean) : Permission
+private class WritePermission(override val read: Boolean, override val write: Boolean, override val share: Boolean) : Permission
+private class SharePermission(override val read: Boolean, override val write: Boolean, override val share: Boolean) : Permission
 
-    class SheetReference(fileId: String, sheetId: String)
-        : DataReference<String, Nothing>(fileId, sheetId, null)
 
-    class RangeReference(fileId: String, sheetId: String, range: DataRange)
-        : DataReference<String, DataRange>(fileId, sheetId, range)
+
+
+interface DataReference<S, out D> {
+    val fileId: S
+    val sheetId: S?
+    val range: D?
 
     companion object {
         @JsonCreator
         @JvmStatic
-        fun creator(fileId: String, sheetId: String?, range: DataRange?): DataReference<String, Any> = when {
+        fun creator(fileId: String, sheetId: String?, range: DataRange?): DataReference<String, DataRange> = when {
             range == null && sheetId == null -> FileReference(fileId)
             range != null && sheetId != null -> RangeReference(fileId, sheetId, range)
             sheetId != null -> SheetReference(fileId, sheetId)
             else -> error("Range cannot be referenced without a sheetId: $fileId, $sheetId, $range")
         }
     }
+
 }
+
+data class FileReference(override val fileId: String, override val sheetId: String? = null, override val range: DataRange? = null)
+    : DataReference<String, DataRange>
+
+data class SheetReference(override val fileId: String, override val sheetId: String, override val range: DataRange? = null)
+    : DataReference<String, DataRange>
+
+data class RangeReference(override val fileId: String, override val sheetId: String, override val range: DataRange)
+    : DataReference<String, DataRange>
+
 
 data class AddPermissionCommand(
         val groupSharingId: String,
