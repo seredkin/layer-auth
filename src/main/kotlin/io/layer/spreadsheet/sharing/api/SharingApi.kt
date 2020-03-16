@@ -5,7 +5,7 @@ import java.util.UUID
 
 val id = { UUID.randomUUID().toString() }
 data class DataFile(val id: String, val name: String, val authorId: String)
-data class DataSheet(val id: String, val fileId: String, val name: String)
+data class DataSheet(val id: String, val fileId: String, val name: String, val authorId: UUID)
 data class DataCell(val x: Int, val y: Int, val sheetId: String)
 data class DataRange(
         val cellSet: Set<DataCell> = setOf(),

@@ -1,13 +1,21 @@
 package io.layer.spreadsheet.sharing
 
-import io.layer.spreadsheet.sharing.component.SheetIdResolver
+import io.layer.spreadsheet.sharing.component.SheetIdRepo
+import io.layer.spreadsheet.sharing.component.UserIdRepo
 import org.amshove.kluent.shouldBe
-import org.amshove.kluent.shouldBeEqualTo
 import org.amshove.kluent.shouldContain
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
 import java.util.UUID
 
+@SpringBootTest(classes = [SharingMicroservice::class])
 class SheetIdResolverTest {
+
+    @Autowired
+    lateinit var sheetIdResolver: SheetIdRepo
+    @Autowired
+    lateinit var userIdRepo: UserIdRepo
 
     private val names = hashSetOf(
             "SheetNameWithoutSpacesSingleCell!A1",
@@ -21,13 +29,14 @@ class SheetIdResolverTest {
 
     @Test
     fun testValidationAndIdGeneration() {
-        val sheetIdResolver = SheetIdResolver()
 
-        val fileId = UUID.randomUUID().toString()
+        val fileId = "test_fileId ${UUID.randomUUID()}"
+        val authorId = UUID.fromString(userIdRepo.getUserId("my@email.com"))
+
 
         //Gen ID for each DataSheet
         val dataSheets = names.map { sheetName ->
-            sheetIdResolver.getDataSheet(fileId, sheetName)
+            sheetIdResolver.getDataSheet(fileId, sheetName, authorId)
         }.toList()
 
         //No duplications
@@ -37,9 +46,8 @@ class SheetIdResolverTest {
         names.forEach { sheetName ->
             val dataSheetAndReference = sheetIdResolver.fetchByFileIdAndSheetName(fileId, sheetName)
 
-            dataSheets shouldContain dataSheetAndReference.first
+            dataSheets shouldContain dataSheetAndReference.get()
         }
-
 
     }
 

@@ -24,6 +24,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("org.flywaydb:flyway-core:6.3.1")
     implementation("org.postgresql:postgresql:42.2.9")
+    implementation("org.jetbrains.exposed:exposed:0.16.1")
     implementation("org.axonframework:axon-configuration:4.3")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.10.2")
     implementation("com.fasterxml.jackson.module:jackson-module-parameter-names:2.10.2")

@@ -8,10 +8,10 @@ create TABLE user_email(
 create TABLE sheet_name(
   id                      UUID PRIMARY KEY,
   author_id               UUID NOT NULL references user_email,
-  fileId                  UUID NOT NULL,
-  name                    TEXT NOT NULL UNIQUE,
+  file_id                 TEXT NOT NULL,
+  name                    TEXT NOT NULL,
   created_at              TIMESTAMP WITH TIME ZONE NOT NULL default 'now()',
-  UNIQUE (fileId, name)
+  UNIQUE (file_id, name)
 );
 
 create TABLE sharing_group(
@@ -26,7 +26,7 @@ create TABLE sharing_group(
 create TABLE data_reference(
   id                      UUID PRIMARY KEY,
   sharing_group_id        UUID NOT NULL references sharing_group,
-  file_id                 UUID NOT NULL,
+  file_id                 TEXT NOT NULL,
   sheet_id                UUID references sheet_name,
   range_cells_set         VARCHAR,
   range_cells_between     VARCHAR,

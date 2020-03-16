@@ -5,11 +5,11 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 @Component
-class UserIdResolver {
+class UserIdResolver:UserIdService {
     private val id = { UUID.randomUUID().toString() }
     val cacheByUserId = ConcurrentHashMap<String, String>()
 
-    fun getUserId(email: String): String {
-        return cacheByUserId.merge(email, id()) { t, _ -> t }!!
+    override fun getUserId(userEmail: String): String {
+        return cacheByUserId.merge(userEmail, id()) { t, _ -> t }!!
     }
 }

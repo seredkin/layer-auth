@@ -12,17 +12,25 @@ import io.layer.spreadsheet.sharing.api.SharingGroup
 import io.layer.spreadsheet.sharing.component.RestPaths
 import io.layer.spreadsheet.sharing.component.SharingCommandResolver
 import io.layer.spreadsheet.sharing.component.SharingQueryResolver
+import io.layer.spreadsheet.sharing.component.UserIdRepo
 import org.amshove.kluent.shouldBe
 import org.amshove.kluent.shouldBeEqualTo
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.returnResult
 import java.util.UUID
 import kotlin.random.Random
 import kotlin.streams.toList
 
-
+@ActiveProfiles("db")
+@SpringBootTest(classes = [SharingMicroservice::class])
 class SystemTests {
+
+    @Autowired
+    lateinit var userIdRepo: UserIdRepo
 
     private val id = { UUID.randomUUID().toString() }
     private val port = Random.nextInt(9_000, 10_000)
@@ -37,6 +45,14 @@ class SystemTests {
         val commandFromJson = mapper.readValue(json, AddPermissionCommand::class.java)
 
         command shouldBeEqualTo commandFromJson
+    }
+
+    @Test
+    fun testUserServices(){
+        val email = "foo@bar.com"
+        val userId = userIdRepo.getUserId(email)
+        val existingId = userIdRepo.getUserId(email)
+        userId shouldBeEqualTo existingId
     }
 
     @Test
@@ -65,7 +81,7 @@ class SystemTests {
     private fun buildAddPermissionCommand(): AddPermissionCommand {
         val anotherUserId = id()
         val file = DataFile(id(), "testFile", id())
-        val sheet = DataSheet(id(), file.id, "blank")
+        val sheet = DataSheet(id(), file.id, "blank", UUID.randomUUID())
         val range = DataRange(cellSet = setOf(DataCell(0, 0, sheet.id), DataCell(1, 0, sheet.id)))
         val dataReference = RangeReference(fileId = file.id, sheetId = sheet.id, range = range)
 
@@ -80,14 +96,14 @@ class SystemTests {
             assert(emptyFlux.responseBody.blockLast()!! == "pong") { "Didn't get a pong response" }
         }
 
-        val authorId = id()
+        val authorId =  UUID.randomUUID()
         val anotherUserId = id()
-        val file = DataFile(id(), "testFile", authorId)
-        val sheet = DataSheet(id(), file.id, "blank")
+        val file = DataFile(id(), "testFile", authorId.toString())
+        val sheet = DataSheet(id(), file.id, "blank",  authorId)
         val range = DataRange(setOf(DataCell(0, 0, sheet.id), DataCell(1, 0, sheet.id)))
         val dataReference = RangeReference(fileId = file.id, sheetId = sheet.id, range = range)
 
-        val command = AddPermissionCommand(id(), authorId, dataReference, Permission.READ, setOf(anotherUserId))
+        val command = AddPermissionCommand(id(), authorId.toString(), dataReference, Permission.READ, setOf(anotherUserId))
 
         webClient.post().uri(RestPaths.startSharing)
                 .bodyValue(command)
@@ -96,7 +112,7 @@ class SystemTests {
         webClient.post().uri(RestPaths.fetchByDataReference).bodyValue(dataReference).exchange()
                 .returnResult<SharingGroup>().consumeWith { groupFlux ->
                     groupFlux.responseBody.all { group ->
-                        group.authorId == authorId && group.users.all(anotherUserId::equals)
+                        group.authorId == authorId.toString() && group.users.all(anotherUserId::equals)
                     }
                 }
     }
