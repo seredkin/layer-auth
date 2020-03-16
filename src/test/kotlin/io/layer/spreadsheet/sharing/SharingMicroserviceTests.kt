@@ -59,17 +59,16 @@ class SharingMicroserviceTests {
         val range = DataRange(setOf(DataCell(0, 0, sheet.id), DataCell(1, 0, sheet.id)))
         val dataReference = RangeReference(file.id, sheet.id, range)
 
-        val command = AddPermissionCommand(
-                id(), authorId, dataReference, Permission.READ, setOf(anotherUserId)
-        )
+        val command = AddPermissionCommand(id(), authorId, dataReference, Permission.READ, setOf(anotherUserId))
+
         webClient.post().uri(RestPaths.startSharing)
                 .bodyValue(command)
                 .exchange().expectStatus().is2xxSuccessful
+
         webClient.post().uri(RestPaths.fetchByDataReference).bodyValue(dataReference).exchange()
                 .returnResult<SharingGroup>().consumeWith { groupFlux ->
                     groupFlux.responseBody.all { group ->
-                        group.authorId == authorId
-                                && group.users.all(anotherUserId::equals)
+                        group.authorId == authorId && group.users.all(anotherUserId::equals)
                     }
                 }
     }

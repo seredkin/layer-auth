@@ -2,12 +2,14 @@ package io.layer.spreadsheet.sharing
 
 import io.layer.spreadsheet.sharing.component.SheetIdResolver
 import org.amshove.kluent.shouldBe
+import org.amshove.kluent.shouldBeEqualTo
+import org.amshove.kluent.shouldContain
 import org.junit.jupiter.api.Test
 import java.util.UUID
 
-class SheetNameTest {
+class SheetIdResolverTest {
 
-    private val samples = arrayOf(
+    private val names = hashSetOf(
             "SheetNameWithoutSpacesSingleCell!A1",
             "'Sheet Name With Spaces Single Cell'!B4",
             "OnlyTheSheetNameWithoutQuotes",
@@ -23,11 +25,21 @@ class SheetNameTest {
 
         val fileId = UUID.randomUUID().toString()
 
-        val ids = samples.map {
-            sheetIdResolver.getSheetId(it, fileId)
+        //Gen ID for each DataSheet
+        val dataSheets = names.map { sheetName ->
+            sheetIdResolver.getDataSheet(fileId, sheetName)
         }.toList()
 
-        ids.toSet().size shouldBe samples.size
+        //No duplications
+        dataSheets.toSet().size shouldBe names.size
+
+        //Ensure each DataSheet is searchable
+        names.forEach { sheetName ->
+            val dataSheetAndReference = sheetIdResolver.fetchByFileIdAndSheetName(fileId, sheetName)
+
+            dataSheets shouldContain dataSheetAndReference.first
+        }
+
 
     }
 
