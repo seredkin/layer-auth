@@ -1,7 +1,6 @@
 package io.layer.spreadsheet.sharing
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import org.springframework.context.ConfigurableApplicationContext
@@ -42,5 +41,6 @@ class SharingMicroservice {
             }
         }
     }
+
 }
 

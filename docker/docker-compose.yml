@@ -1,0 +1,17 @@
+version: '3'
+services:
+  postgres:
+    image: layer/postgres
+    build:
+      context: postgres
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+    environment:
+      POSTGRES_PASSWORD: sharing_msa
+      POSTGRES_HOST_AUTH_METHOD: trust
+

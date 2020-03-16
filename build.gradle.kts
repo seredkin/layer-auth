@@ -12,15 +12,18 @@ version = "0.0.1-SNAPSHOT"
 java.sourceCompatibility = JavaVersion.VERSION_11
 
 repositories {
-    jcenter()
     mavenCentral()
+    jcenter()
 }
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation("org.springframework.boot:spring-boot-starter-jdbc")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    implementation("org.flywaydb:flyway-core:6.3.1")
+    implementation("org.postgresql:postgresql:42.2.9")
     implementation("org.axonframework:axon-configuration:4.3")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.10.2")
     implementation("com.fasterxml.jackson.module:jackson-module-parameter-names:2.10.2")

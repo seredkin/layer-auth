@@ -19,7 +19,7 @@ class SheetIdResolver {
         val pageName = sheetName.substringBefore(rangeAfter)
         val key = fileId + fileIdBefore + pageName
         val dataSheet = DataSheet(id(), fileId, sheetName)
-        val dataReference = SheetReference(fileId, dataSheet.id)
+        val dataReference = SheetReference(fileId = fileId, sheetId = dataSheet.id)
         //Using Kotlin's CAS merge
         return cacheSheetName.getOrPut(key, { dataSheet to dataReference }).first
     }
@@ -33,7 +33,6 @@ class SheetIdResolver {
     }
 
     companion object {
-        const val EMPTY = ""
         const val fileIdBefore = "::"
         const val rangeAfter = "!"
         const val validationRx = "^('[\\w\\s]+'|[\\w\\s]+)(![A-Z]+[0-9]+)?(:[A-Z]+[0-9]+)?"

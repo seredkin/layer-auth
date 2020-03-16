@@ -1,7 +1,9 @@
 package io.layer.spreadsheet.sharing.api
 
 import com.fasterxml.jackson.annotation.JsonCreator
+import java.util.UUID
 
+val id = { UUID.randomUUID().toString() }
 data class DataFile(val id: String, val name: String, val authorId: String)
 data class DataSheet(val id: String, val fileId: String, val name: String)
 data class DataCell(val x: Int, val y: Int, val sheetId: String)
@@ -39,11 +41,23 @@ interface Permission {
     }
 }
 
-private class ReadPermission(override val read: Boolean, override val write: Boolean, override val share: Boolean) : Permission
-private class WritePermission(override val read: Boolean, override val write: Boolean, override val share: Boolean) : Permission
-private class SharePermission(override val read: Boolean, override val write: Boolean, override val share: Boolean) : Permission
+private class ReadPermission(
+        override val read: Boolean,
+        override val write: Boolean,
+        override val share: Boolean) : Permission
+
+private class WritePermission(
+        override val read: Boolean,
+        override val write: Boolean,
+        override val share: Boolean) : Permission
+
+private class SharePermission(
+        override val read: Boolean,
+        override val write: Boolean,
+        override val share: Boolean) : Permission
 
 interface DataReference<S, out D> {
+    val id: S
     val fileId: S
     val sheetId: S?
     val range: D?
@@ -52,23 +66,35 @@ interface DataReference<S, out D> {
         @JsonCreator
         @JvmStatic
         fun creator(fileId: String, sheetId: String?, range: DataRange?): DataReference<String, DataRange?> = when {
-            range == null && sheetId == null -> FileReference(fileId)
-            range != null && sheetId != null -> RangeReference(fileId, sheetId, range)
-            sheetId != null -> SheetReference(fileId, sheetId)
+            range == null && sheetId == null -> FileReference(fileId = fileId)
+            range != null && sheetId != null -> RangeReference(fileId = fileId, sheetId = sheetId, range = range)
+            sheetId != null -> SheetReference(fileId = fileId, sheetId = sheetId)
             else -> error("Range cannot be referenced without a sheetId: $fileId, $sheetId, $range")
         }
     }
 
 }
 
-data class FileReference(override val fileId: String, override val sheetId: String? = null, override val range: DataRange? = null)
+data class FileReference(
+        override val id: String = id(),
+        override val fileId: String,
+        override val sheetId: String? = null,
+        override val range: DataRange? = null)
     : DataReference<String, DataRange>
 
-data class SheetReference(override val fileId: String, override val sheetId: String, override val range: DataRange? = null)
+data class SheetReference(
+        override val id: String = id(),
+        override val fileId: String,
+        override val sheetId: String,
+        override val range: DataRange? = null)
     : DataReference<String, DataRange>
 
-data class RangeReference(override val fileId: String, override val sheetId: String, override val range: DataRange)
-    : DataReference<String,  DataRange>
+data class RangeReference(
+        override val id: String = id(),
+        override val fileId: String,
+        override val sheetId: String,
+        override val range: DataRange)
+    : DataReference<String, DataRange>
 
 
 data class AddPermissionCommand(

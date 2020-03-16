@@ -67,7 +67,7 @@ class SystemTests {
         val file = DataFile(id(), "testFile", id())
         val sheet = DataSheet(id(), file.id, "blank")
         val range = DataRange(cellSet = setOf(DataCell(0, 0, sheet.id), DataCell(1, 0, sheet.id)))
-        val dataReference = RangeReference(file.id, sheet.id, range)
+        val dataReference = RangeReference(fileId = file.id, sheetId = sheet.id, range = range)
 
         return AddPermissionCommand(id(), file.authorId, dataReference, Permission.WRITE, setOf(anotherUserId))
     }
@@ -85,7 +85,7 @@ class SystemTests {
         val file = DataFile(id(), "testFile", authorId)
         val sheet = DataSheet(id(), file.id, "blank")
         val range = DataRange(setOf(DataCell(0, 0, sheet.id), DataCell(1, 0, sheet.id)))
-        val dataReference = RangeReference(file.id, sheet.id, range)
+        val dataReference = RangeReference(fileId = file.id, sheetId = sheet.id, range = range)
 
         val command = AddPermissionCommand(id(), authorId, dataReference, Permission.READ, setOf(anotherUserId))
 

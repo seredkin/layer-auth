@@ -1,0 +1,8 @@
+spring:
+  flyway:
+    enabled: true
+  datasource:
+    url: jdbc:postgresql://localhost:5432/sharing_msa
+    username: sharing_msa
+    password: sharing_msa
+    driver-class-name: org.postgresql.Driver
