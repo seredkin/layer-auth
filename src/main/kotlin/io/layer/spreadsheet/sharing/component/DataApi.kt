@@ -19,14 +19,14 @@ internal fun rowToDataSheet(it: ResultRow): DataSheet {
     )
 }
 
-internal fun rowToSharingGroup(it: ResultRow): SharingGroup {
+internal fun rowToSharingGroup(it: ResultRow, dataReference: DataReference<String, DataRange?>): SharingGroup {
     return with(TSharingGroup) {
         SharingGroup(
                 id = it[id].toString(),
                 authorId = it[authorId].toString(),
                 permission = Permission.of(read = it[permissionRead], write = it[permissionWrite], share = it[permissionShare]),
                 users = setOf(),
-                data = setOf()
+                data = dataReference
         )
     }
 }

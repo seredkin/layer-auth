@@ -27,7 +27,7 @@ internal object TSheetName : Table("sheet_name"), SharingDomainTable {
 
 internal object TSharingGroup : Table("sharing_group"), SharingDomainTable {
     override val id = uuid("id").primaryKey()
-    val authorId = TSheetName.uuid("author_id").references(TUserEmail.id)
+    val authorId = uuid("author_id").references(TUserEmail.id)
     val permissionRead = bool("permission_read").default(true)
     val permissionWrite = bool("permission_write").default(false)
     val permissionShare = bool("permission_share").default(false)

@@ -23,7 +23,7 @@ class SharingCommandResolver: SharingCommandService<AddPermissionCommand, DataRe
                 authorId = pc.authorId,
                 permission = pc.permission,
                 users = pc.users,
-                data = setOf(pc.dataReference))
+                data = pc.dataReference)
         referenceCache.merge(pc.dataReference.hashCode(), setOf(sharingGroup)){ t, u ->  t.plus(u)}
     }
 

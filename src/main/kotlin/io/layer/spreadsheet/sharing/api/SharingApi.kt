@@ -1,6 +1,10 @@
 package io.layer.spreadsheet.sharing.api
 
 import com.fasterxml.jackson.annotation.JsonCreator
+import io.layer.spreadsheet.sharing.api.DataReference.Companion.TYPE_CELL_RANGE
+import io.layer.spreadsheet.sharing.api.DataReference.Companion.TYPE_CELL_SET
+import io.layer.spreadsheet.sharing.api.DataReference.Companion.TYPE_FILE
+import io.layer.spreadsheet.sharing.api.DataReference.Companion.TYPE_SHEET
 import java.util.UUID
 
 val id = { UUID.randomUUID().toString() }
@@ -10,7 +14,12 @@ data class DataCell(val x: Int, val y: Int, val sheetId: String)
 data class DataRange(
         val cellSet: Set<DataCell> = setOf(),
         val cellRange: Set<DataCell> = setOf()
-){
+) {
+    fun type(): String = when {
+        cellSet.isNotEmpty() -> TYPE_CELL_SET
+        else -> TYPE_CELL_RANGE
+    }
+
     companion object {
         @JsonCreator
         @JvmStatic
@@ -21,6 +30,8 @@ data class DataRange(
 
         fun fromStringSet(daString: String) = DataRange(setOf(), setOf())
         fun fromStringBetween(daString: String) = DataRange(setOf(), setOf())
+        fun asStringSet(range: DataRange) = range.toString()
+        fun asStringBetween(range: DataRange) = range.toString()
     }
 }
 
@@ -60,12 +71,17 @@ private class SharePermission(
         override val share: Boolean) : Permission
 
 interface DataReference<S, out D> {
-    val id: S
+    val id: S?
     val fileId: S
     val sheetId: S?
     val range: D?
 
+    fun type(): String
     companion object {
+        const val TYPE_FILE = "FILE"
+        const val TYPE_SHEET = "SHEET"
+        const val TYPE_CELL_SET = "CELL_SET"
+        const val TYPE_CELL_RANGE = "CELL_RANGE"
         @JsonCreator
         @JvmStatic
         fun creator(fileId: String, sheetId: String?, range: DataRange?): DataReference<String, DataRange?> = when {
@@ -79,25 +95,32 @@ interface DataReference<S, out D> {
 }
 
 data class FileReference(
-        override val id: String = id(),
+        override val id: String?=null,
         override val fileId: String,
         override val sheetId: String? = null,
         override val range: DataRange? = null)
-    : DataReference<String, DataRange>
+    : DataReference<String, DataRange> {
+    override fun type() = TYPE_FILE
+}
 
 data class SheetReference(
-        override val id: String = id(),
+        override val id: String? = null,
         override val fileId: String,
         override val sheetId: String,
         override val range: DataRange? = null)
-    : DataReference<String, DataRange>
+    : DataReference<String, DataRange> {
+    override fun type() = TYPE_SHEET
+}
 
 data class RangeReference(
-        override val id: String = id(),
+        override val id: String? = null,
         override val fileId: String,
         override val sheetId: String,
         override val range: DataRange)
-    : DataReference<String, DataRange>
+    : DataReference<String, DataRange> {
+    override fun type() = range.type()
+
+}
 
 
 data class AddPermissionCommand(
@@ -113,7 +136,7 @@ data class SharingGroup(
         val authorId: String,
         val permission: Permission = Permission.READ,
         val users: Set<String>,
-        val data: Set<DataReference<String, DataRange?>>
+        val data: DataReference<String, DataRange?>
 )
 
 

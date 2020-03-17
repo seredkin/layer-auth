@@ -6,7 +6,6 @@ import io.layer.spreadsheet.sharing.api.DataReference
 import io.layer.spreadsheet.sharing.api.SharingCommandService
 import io.layer.spreadsheet.sharing.api.SharingGroup
 import io.layer.spreadsheet.sharing.api.SharingQueryService
-import io.layer.spreadsheet.sharing.component.SharingCommandResolver.Companion.referenceCache
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
@@ -25,30 +24,51 @@ class SharingGroupRepository(private val dataSource: DataSource)
         SharingCommandService<AddPermissionCommand, DataReference<String, DataRange?>> {
     internal val db = { Database.connect(dataSource) }
 
+    /**
+     * This function CASCADE selects DataReferences from a given level. E.g. FILE selects FILE, its SHEETS and RANGES
+     * */
     override fun fetchByDataReference(dataReference: DataReference<String, DataRange?>): Stream<SharingGroup> = transaction(db()) {
-        val groupRefs = with(TDataReference) {
-            select {
-                fileId eq dataReference.fileId and
-                        (sheetId eq dataReference.sheetId.let { UUID.fromString(it) }) and
-                        (when {
-                            dataReference.range?.cellRange != null -> (rangeCellsBetween eq dataReference.range?.cellRange.toString())
-                            else -> (rangeCellsSet eq dataReference.range?.cellSet.toString())
-                        })
-            }.map { it[sharingGroupId] }.toList()
-
-        }
+        val dataReferenceList = with(TDataReference) {
+            when (dataReference.type()) {
+                DataReference.TYPE_FILE ->
+                    select { fileId eq dataReference.fileId }
+                DataReference.TYPE_SHEET ->
+                    select { fileId eq dataReference.fileId and (sheetId eq UUID.fromString(dataReference.sheetId)) }
+                DataReference.TYPE_CELL_SET ->
+                    select {
+                        fileId eq dataReference.fileId and
+                                (sheetId eq UUID.fromString(dataReference.sheetId)) and
+                                (rangeCellsSet eq DataRange.asStringSet(dataReference.range!!))
+                    }
+                else -> //As Range Between
+                    select {
+                        fileId eq dataReference.fileId and
+                                (sheetId eq UUID.fromString(dataReference.sheetId)) and
+                                (rangeCellsSet eq DataRange.asStringBetween(dataReference.range!!))
+                    }
+            }
+        }.map { row -> Pair(row[TDataReference.sharingGroupId], rowToDataReference(row)) }.toMap()
 
         with(TSharingGroup) {
-            select { id inList groupRefs }
-        }.map { row -> rowToSharingGroup(row) }.stream()
+            select { id inList dataReferenceList.keys }
+        }.map { row ->
+            val dataRefId = row[TSharingGroup.id]
+            rowToSharingGroup(row, dataReferenceList[dataRefId] ?: error("ID not mapped: $dataRefId"))
+        }.stream()
+
+
     }
 
-    override fun fetchByAuthorId(authorId: String): Stream<SharingGroup> {
-        return referenceCache.values.stream().flatMap { it.stream() }.filter { it.authorId == authorId }
+    override fun fetchByAuthorId(authorId: String): Stream<SharingGroup> = transaction(db()) {
+        (TSharingGroup innerJoin TDataReference)
+                .select { TSharingGroup.authorId eq UUID.fromString(authorId) }
+                .map { row -> rowToSharingGroup(row, rowToDataReference(row)) }.stream()
     }
 
-    override fun fetchBySharingGroupId(sharingGroupId: String): Stream<SharingGroup> {
-        return referenceCache.values.stream().flatMap { it.stream() }.filter { it.id == sharingGroupId }
+    override fun fetchBySharingGroupId(sharingGroupId: String): Stream<SharingGroup> = transaction(db()) {
+        (TSharingGroup innerJoin TDataReference)
+                .select { TSharingGroup.id eq UUID.fromString(sharingGroupId) }
+                .map { rowToSharingGroup(it, rowToDataReference(it)) }.stream()
     }
 
     override fun startSharing(pc: AddPermissionCommand) {
@@ -62,25 +82,27 @@ class SharingGroupRepository(private val dataSource: DataSource)
                     sg[permissionWrite] = pc.permission.write
                     sg[permissionShare] = pc.permission.share
                 }
-            }
-            with(TDataReference) {
-                insert { dr ->
-                    dr[id] = UUID.randomUUID()
-                    dr[sharingGroupId] = groupUuid
-                    dr[fileId] = pc.dataReference.fileId
-                    dr[sheetId] = pc.dataReference.sheetId?.let { UUID.fromString(it) }
-                    dr[rangeCellsBetween] = when {
-                        pc.dataReference.range?.cellRange != null -> pc.dataReference.range?.cellRange
-                        else -> pc.dataReference.range?.cellSet
-                    }.toString()
+            }.also {
+                with(TDataReference) {
+                    insert { dr ->
+                        dr[id] = UUID.randomUUID()
+                        dr[sharingGroupId] = groupUuid
+                        dr[fileId] = pc.dataReference.fileId
+                        dr[sheetId] = pc.dataReference.sheetId?.let { UUID.fromString(it) }
+                        dr[rangeCellsBetween] = when {
+                            pc.dataReference.range?.cellRange != null -> pc.dataReference.range?.cellRange
+                            else -> pc.dataReference.range?.cellSet
+                        }.toString()
+                    }
                 }
-            }
-            pc.users.forEach { u ->
-                with(TRelSharingGroupUsers) {
-                    insert {
-                        it[id] = UUID.randomUUID()
-                        it[user_id] = UUID.fromString(u)
-                        it[sharingGroupId] = UUID.fromString(pc.sharingGroupId)
+            }.also {
+                pc.users.forEach { userId ->
+                    with(TRelSharingGroupUsers) {
+                        insert { uRelG ->
+                            uRelG[id] = UUID.randomUUID()
+                            uRelG[user_id] = UUID.fromString(userId)
+                            uRelG[sharingGroupId] = UUID.fromString(pc.sharingGroupId)
+                        }
                     }
                 }
             }

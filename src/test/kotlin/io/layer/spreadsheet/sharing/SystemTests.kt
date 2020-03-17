@@ -12,10 +12,10 @@ import io.layer.spreadsheet.sharing.api.RangeReference
 import io.layer.spreadsheet.sharing.api.SharingGroup
 import io.layer.spreadsheet.sharing.component.RestPaths
 import io.layer.spreadsheet.sharing.component.SharingGroupRepository
-import io.layer.spreadsheet.sharing.component.SharingQueryResolver
 import io.layer.spreadsheet.sharing.component.UserIdRepo
 import org.amshove.kluent.shouldBe
 import org.amshove.kluent.shouldBeEqualTo
+import org.amshove.kluent.shouldContain
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -33,7 +33,6 @@ class SystemTests {
     @Autowired lateinit var sharingGroupRepository: SharingGroupRepository
     @Autowired lateinit var userIdRepo: UserIdRepo
 
-
     @Test
     fun jsonTest() {
         val mapper = ObjectMapper().findAndRegisterModules()
@@ -45,19 +44,20 @@ class SystemTests {
         command shouldBeEqualTo commandFromJson
     }
 
-
-
     @Test
-    fun cqrsResolversTest() {
+    fun cqrs() {
+        val fileId = "cqrsResolversTest"
         val userId = userIdRepo.getUserId("foo@bar.com")
         val anotherUserId = userIdRepo.getUserId("another@bar.com")
         val commandSvc = sharingGroupRepository
-        val querySvc = SharingQueryResolver()
+        val querySvc = sharingGroupRepository
 
-        val command = buildFilePermissionCommand(userId, anotherUserId)
+        val file = DataFile(fileId, "testFile", userId)
+        val dataReference = FileReference(fileId = file.id)
+        val command = AddPermissionCommand(id(), file.authorId, dataReference, Permission.SHARE, setOf(anotherUserId))
         commandSvc.startSharing(command)
         val shares = querySvc.fetchByDataReference(command.dataReference).toList()
-        shares.first().data.first() shouldBe command.dataReference
+        shares.map { it.data.fileId }.toList() shouldContain command.dataReference.fileId
 
         val byAuthorId = querySvc.fetchByAuthorId(command.authorId).toList()
         byAuthorId.first().authorId shouldBeEqualTo command.authorId
@@ -70,13 +70,6 @@ class SystemTests {
         querySvc.fetchBySharingGroupId(command.sharingGroupId).toList().isEmpty() shouldBe true
         querySvc.fetchByAuthorId(command.authorId).toList().isEmpty() shouldBe true
         querySvc.fetchByDataReference(command.dataReference).toList().isEmpty() shouldBe true
-    }
-
-    private fun buildFilePermissionCommand(userId: String, anotherUserId: String): AddPermissionCommand {
-        val file = DataFile(id(), "testFile", userId)
-        val dataReference = FileReference(fileId = file.id)
-
-        return AddPermissionCommand(id(), file.authorId, dataReference, Permission.WRITE, setOf(anotherUserId))
     }
 
 
