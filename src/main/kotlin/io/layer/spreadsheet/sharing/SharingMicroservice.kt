@@ -28,19 +28,5 @@ class SharingMicroservice {
         }
     }
 
-    @Primary
-    @Bean
-    fun objectMapper() = ObjectMapper().findAndRegisterModules()
-
-    @Bean
-    fun webFluxConfig(mapper: ObjectMapper): WebFluxConfigurer {
-        return object : WebFluxConfigurer {
-            override fun configureHttpMessageCodecs(configurer: ServerCodecConfigurer) {
-                configurer.defaultCodecs().jackson2JsonEncoder(Jackson2JsonEncoder(mapper))
-                configurer.defaultCodecs().jackson2JsonDecoder(Jackson2JsonDecoder(mapper))
-            }
-        }
-    }
-
 }
 

@@ -1,6 +1,7 @@
 package io.layer.spreadsheet.sharing
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import io.layer.spreadsheet.sharing.api.AddPermissionCommand
 import io.layer.spreadsheet.sharing.api.DataCell
 import io.layer.spreadsheet.sharing.api.DataFile
@@ -10,6 +11,7 @@ import io.layer.spreadsheet.sharing.api.FileReference
 import io.layer.spreadsheet.sharing.api.Permission
 import io.layer.spreadsheet.sharing.api.RangeReference
 import io.layer.spreadsheet.sharing.api.SharingGroup
+import io.layer.spreadsheet.sharing.api.uuid
 import io.layer.spreadsheet.sharing.component.RestPaths
 import io.layer.spreadsheet.sharing.component.SharingGroupRepository
 import io.layer.spreadsheet.sharing.component.UserIdRepo
@@ -17,6 +19,8 @@ import org.amshove.kluent.shouldBe
 import org.amshove.kluent.shouldBeEqualTo
 import org.amshove.kluent.shouldContain
 import org.junit.jupiter.api.Test
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -32,6 +36,7 @@ class SystemTests {
     private val port = Random.nextInt(9_000, 10_000)
     @Autowired lateinit var sharingGroupRepository: SharingGroupRepository
     @Autowired lateinit var userIdRepo: UserIdRepo
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
 
     @Test
     fun jsonTest() {
@@ -73,6 +78,7 @@ class SystemTests {
     }
 
 
+
     private fun buildAddPermissionCommand(): AddPermissionCommand {
         val anotherUserId = id()
         val file = DataFile(id = id(), name = "testFile", authorId = id())
@@ -80,36 +86,14 @@ class SystemTests {
         val range = DataRange(cellSet = setOf(DataCell(0, 0, sheet.id.toString()), DataCell(1, 0, sheet.id.toString())))
         val dataReference = RangeReference(fileId = file.id, sheetId = sheet.id.toString(), range = range)
 
-        return AddPermissionCommand(id(), file.authorId, dataReference, Permission.WRITE, setOf(anotherUserId))
+        return AddPermissionCommand(
+                sharingGroupId = id(),
+                authorId = file.authorId,
+                dataReference = dataReference,
+                permission = Permission.WRITE,
+                users = setOf(anotherUserId)
+        )
     }
 
-    fun contextLoads() {
-        val ctx = SharingMicroservice.bootStrap(arrayOf("--server.port=$port"))
-        val webClient = WebTestClient.bindToApplicationContext(ctx).build()
-
-        webClient.get().uri(RestPaths.ping).exchange().returnResult<String>().consumeWith { emptyFlux ->
-            assert(emptyFlux.responseBody.blockLast()!! == "pong") { "Didn't get a pong response" }
-        }
-
-        val authorId =  UUID.randomUUID()
-        val anotherUserId = id()
-        val file = DataFile(id(), "testFile", authorId.toString())
-        val sheet = DataSheet(fileId = file.id, name = "blank", authorId = authorId)
-        val range = DataRange(setOf(DataCell(0, 0, sheet.id.toString()), DataCell(1, 0, sheet.id.toString())))
-        val dataReference = RangeReference(fileId = file.id, sheetId = sheet.id.toString(), range = range)
-
-        val command = AddPermissionCommand(id(), authorId.toString(), dataReference, Permission.READ, setOf(anotherUserId))
-
-        webClient.post().uri(RestPaths.startSharing)
-                .bodyValue(command)
-                .exchange().expectStatus().is2xxSuccessful
-
-        webClient.post().uri(RestPaths.fetchByDataReference).bodyValue(dataReference).exchange()
-                .returnResult<SharingGroup>().consumeWith { groupFlux ->
-                    groupFlux.responseBody.all { group ->
-                        group.authorId == authorId.toString() && group.users.all(anotherUserId::equals)
-                    }
-                }
-    }
 
 }

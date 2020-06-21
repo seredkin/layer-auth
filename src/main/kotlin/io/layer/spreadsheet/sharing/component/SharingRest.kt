@@ -6,6 +6,8 @@ import io.layer.spreadsheet.sharing.api.DataReference
 import io.layer.spreadsheet.sharing.api.SharingCommandService
 import io.layer.spreadsheet.sharing.api.SharingGroup
 import io.layer.spreadsheet.sharing.api.SharingQueryService
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -23,12 +25,12 @@ class SharingRest(
         SharingCommandService<AddPermissionCommand, DataReference<String, Any>> {
 
     @PostMapping(RestPaths.startSharing)
-    override fun startSharing(pc: AddPermissionCommand) {
+    override fun startSharing(@RequestBody pc: AddPermissionCommand) {
         sharingCommandService.startSharing(pc)
     }
 
     @PostMapping(RestPaths.stopSharing)
-    override fun stopSharing(dataReference: DataReference<String, Any>) {
+    override fun stopSharing(@RequestBody dataReference: DataReference<String, Any>) {
         sharingCommandService.stopSharing(dataReference)
     }
 
