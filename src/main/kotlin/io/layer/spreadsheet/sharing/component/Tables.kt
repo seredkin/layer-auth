@@ -16,7 +16,6 @@ internal object TUserEmail : Table("user_email"), SharingDomainTable {
     override val createdAt = datetime("created_at")
 }
 
-
 internal object TSheetName : Table("sheet_name"), SharingDomainTable {
     override val id = uuid("id").primaryKey()
     val authorId = uuid("author_id").references(TUserEmail.id)

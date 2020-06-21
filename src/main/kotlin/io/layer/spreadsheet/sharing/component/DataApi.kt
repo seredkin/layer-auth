@@ -12,7 +12,7 @@ import org.jetbrains.exposed.sql.ResultRow
 
 internal fun rowToDataSheet(it: ResultRow): DataSheet {
     return DataSheet(
-            id = it[TSheetName.id].toString(),
+            id = it[TSheetName.id],
             fileId = it[TSheetName.fileId].toString(),
             name = it[TSheetName.name],
             authorId = it[TSheetName.authorId]

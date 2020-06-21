@@ -36,7 +36,7 @@ class SheetIdResolverTest {
 
         //Gen ID for each DataSheet
         val dataSheets = names.map { sheetName ->
-            sheetIdResolver.getDataSheet(fileId, sheetName, authorId)
+            sheetIdResolver.fetchByFileIdAndSheetNameAndAuthor(fileId, sheetName, authorId)
         }.toList()
 
         //No duplications
@@ -44,9 +44,9 @@ class SheetIdResolverTest {
 
         //Ensure each DataSheet is searchable
         names.forEach { sheetName ->
-            val dataSheetAndReference = sheetIdResolver.fetchByFileIdAndSheetName(fileId, sheetName)
+            val dataSheetAndReference = sheetIdResolver.fetchByFileIdAndSheetNameAndAuthor(fileId, sheetName, authorId)
 
-            dataSheets shouldContain dataSheetAndReference.get()
+            dataSheets shouldContain dataSheetAndReference
         }
 
     }

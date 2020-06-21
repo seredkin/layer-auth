@@ -48,13 +48,13 @@ class SystemTests {
     fun cqrs() {
         val fileId = "cqrsResolversTest"
         val userId = userIdRepo.getUserId("foo@bar.com")
-        val anotherUserId = userIdRepo.getUserId("another@bar.com")
+        val participantId = userIdRepo.getUserId("another@bar.com")
         val commandSvc = sharingGroupRepository
         val querySvc = sharingGroupRepository
 
         val file = DataFile(fileId, "testFile", userId)
         val dataReference = FileReference(fileId = file.id)
-        val command = AddPermissionCommand(id(), file.authorId, dataReference, Permission.SHARE, setOf(anotherUserId))
+        val command = AddPermissionCommand(id(), file.authorId, dataReference, Permission.SHARE, setOf(participantId))
         commandSvc.startSharing(command)
         val shares = querySvc.fetchByDataReference(command.dataReference).toList()
         shares.map { it.data.fileId }.toList() shouldContain command.dataReference.fileId
@@ -75,10 +75,10 @@ class SystemTests {
 
     private fun buildAddPermissionCommand(): AddPermissionCommand {
         val anotherUserId = id()
-        val file = DataFile(id(), "testFile", id())
-        val sheet = DataSheet(id(), file.id, "blank", UUID.randomUUID())
-        val range = DataRange(cellSet = setOf(DataCell(0, 0, sheet.id), DataCell(1, 0, sheet.id)))
-        val dataReference = RangeReference(fileId = file.id, sheetId = sheet.id, range = range)
+        val file = DataFile(id = id(), name = "testFile", authorId = id())
+        val sheet = DataSheet(fileId = file.id, name = "blank", authorId = UUID.randomUUID())
+        val range = DataRange(cellSet = setOf(DataCell(0, 0, sheet.id.toString()), DataCell(1, 0, sheet.id.toString())))
+        val dataReference = RangeReference(fileId = file.id, sheetId = sheet.id.toString(), range = range)
 
         return AddPermissionCommand(id(), file.authorId, dataReference, Permission.WRITE, setOf(anotherUserId))
     }
@@ -94,9 +94,9 @@ class SystemTests {
         val authorId =  UUID.randomUUID()
         val anotherUserId = id()
         val file = DataFile(id(), "testFile", authorId.toString())
-        val sheet = DataSheet(id(), file.id, "blank",  authorId)
-        val range = DataRange(setOf(DataCell(0, 0, sheet.id), DataCell(1, 0, sheet.id)))
-        val dataReference = RangeReference(fileId = file.id, sheetId = sheet.id, range = range)
+        val sheet = DataSheet(fileId = file.id, name = "blank", authorId = authorId)
+        val range = DataRange(setOf(DataCell(0, 0, sheet.id.toString()), DataCell(1, 0, sheet.id.toString())))
+        val dataReference = RangeReference(fileId = file.id, sheetId = sheet.id.toString(), range = range)
 
         val command = AddPermissionCommand(id(), authorId.toString(), dataReference, Permission.READ, setOf(anotherUserId))
 
