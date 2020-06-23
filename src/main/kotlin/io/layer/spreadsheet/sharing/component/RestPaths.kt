@@ -7,5 +7,5 @@ internal object RestPaths {
     const val stopSharing = "/stop-sharing"
     const val fetchByDataReference = "/fetch-by-data-reference"
     const val fetchByAuthorId = "/fetch-by-author-id"
-    const val ping = "/ping"
+    const val fetchBySharingGroupId = "/fetch-by-sharing-group-id"
 }

@@ -8,9 +8,16 @@ import java.util.*
 val id = { UUID.randomUUID().toString() }
 val uuid = { UUID.randomUUID() }
 
+/** Non-persisted container for DataSheets*/
 data class DataFile(val id: String, val name: String, val authorId: String)
+
+/** Persisted reference to a File's Data Sheet*/
 data class DataSheet(val id: UUID = uuid(), val fileId: String, val name: String, val authorId: UUID)
+
+/* Persisted reference to a particular cell in a Data Sheet*/
 data class DataCell(val x: Int, val y: Int, val sheetId: String)
+
+/* Persisted reference to a range of cells in a Data Sheet*/
 data class DataRange(
         val cellSet: Set<DataCell> = setOf(),
         val cellRange: Set<DataCell> = setOf()

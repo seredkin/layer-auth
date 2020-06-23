@@ -1,18 +1,16 @@
-package io.layer.spreadsheet.sharing
+package io.layer.spreadsheet.sharing.component
 
+import io.layer.spreadsheet.sharing.SharingMicroservice
 import io.layer.spreadsheet.sharing.api.SheetAddCommand
 import io.layer.spreadsheet.sharing.api.SheetQuery
 import io.layer.spreadsheet.sharing.api.UserAddCommand
 import io.layer.spreadsheet.sharing.api.id
-import io.layer.spreadsheet.sharing.component.SheetRepo
-import io.layer.spreadsheet.sharing.component.UserRepo
 import org.amshove.kluent.shouldBe
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import java.util.*
-import kotlin.random.Random
 
 @SpringBootTest(classes = [SharingMicroservice::class])
 class SheetQueryResolverTest {
@@ -43,12 +41,12 @@ class SheetQueryResolverTest {
         val authorId = UUID.fromString(userIdRepo.idByEmail(userEmail))
 
 
-        //Gen ID for each DataSheet
+        //Save each DataSheet
         val dataSheets = names.map { sheetName ->
             sheetRepo.addDataSheet(SheetAddCommand(fileName = fileId, sheetName = sheetName, authorId = authorId.toString()))
         }.toList()
 
-        //No duplications
+        //Ensure no duplications
         dataSheets.toSet().size shouldBe names.size
 
         //Ensure each DataSheet is searchable

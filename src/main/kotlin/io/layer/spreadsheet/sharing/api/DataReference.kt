@@ -2,6 +2,11 @@ package io.layer.spreadsheet.sharing.api
 
 import com.fasterxml.jackson.annotation.JsonCreator
 
+/** Abstract definition of the shareable data
+ * @see FileReference
+ * @see SheetReference
+ * @see RangeReference
+ * */
 interface DataReference<S, out D> {
     val id: S?
     val fileId: S
