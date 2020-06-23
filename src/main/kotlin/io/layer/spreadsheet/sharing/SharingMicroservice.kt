@@ -1,16 +1,8 @@
 package io.layer.spreadsheet.sharing
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
-import org.springframework.context.ConfigurableApplicationContext
-import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Primary
-import org.springframework.http.codec.ServerCodecConfigurer
-import org.springframework.http.codec.json.Jackson2JsonDecoder
-import org.springframework.http.codec.json.Jackson2JsonEncoder
-import org.springframework.web.reactive.config.WebFluxConfigurer
 
 
 @SpringBootApplication
@@ -20,12 +12,9 @@ class SharingMicroservice {
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            bootStrap(args)
+            runApplication<SharingMicroservice>(*args)
         }
 
-        fun bootStrap(args: Array<String>): ConfigurableApplicationContext {
-            return runApplication<SharingMicroservice>(*args)
-        }
     }
 
 }

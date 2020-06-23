@@ -1,8 +1,5 @@
 package io.layer.spreadsheet.sharing
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
-import io.layer.spreadsheet.sharing.api.AddPermissionCommand
 import io.layer.spreadsheet.sharing.api.DataCell
 import io.layer.spreadsheet.sharing.api.DataFile
 import io.layer.spreadsheet.sharing.api.DataRange
@@ -10,6 +7,9 @@ import io.layer.spreadsheet.sharing.api.DataSheet
 import io.layer.spreadsheet.sharing.api.Permission
 import io.layer.spreadsheet.sharing.api.RangeReference
 import io.layer.spreadsheet.sharing.api.SharingGroup
+import io.layer.spreadsheet.sharing.api.SheetAddCommand
+import io.layer.spreadsheet.sharing.api.StartSharingCommand
+import io.layer.spreadsheet.sharing.api.UserAddCommand
 import io.layer.spreadsheet.sharing.api.id
 import io.layer.spreadsheet.sharing.api.uuid
 import io.layer.spreadsheet.sharing.component.RestPaths
@@ -29,25 +29,44 @@ private class FunctionalTest {
 
     @Test
     fun pingPong() {
-        webClient.get().uri("${RestPaths.ping}").exchange().expectStatus().is2xxSuccessful
+        webClient.get().uri(RestPaths.ping).exchange().expectStatus().is2xxSuccessful
     }
 
     @Test
     fun addWebPermissionTest() {
 
+        val authorId = uuid()
+        val anotherUserId = uuid().toString()
+        val file = DataFile(id(), "$authorId:testFile", "$authorId")
 
-        webClient.get().uri(RestPaths.ping).exchange().returnResult<String>().consumeWith { emptyFlux ->
-            assert(emptyFlux.responseBody.blockLast()!! == "pong") { "Didn't get a pong response" }
-        }
+        //Create Author User
+        webClient.post().uri(RestPaths.user)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(UserAddCommand("test@$authorId.test", "$authorId"))
+                .exchange().expectStatus().is2xxSuccessful
 
-        val authorId =  uuid()
-        val anotherUserId = id()
-        val file = DataFile(id(), "testFile", authorId.toString())
-        val sheet = DataSheet(fileId = file.id, name = "blank", authorId = authorId)
+        //Create a collaborating User
+        webClient.post().uri(RestPaths.user)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(UserAddCommand("test@$anotherUserId.test", anotherUserId))
+                .exchange().expectStatus().is2xxSuccessful
+
+        //Create data reference (SheetAddCommand)
+        val sheet = webClient.put().uri(RestPaths.sheet)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(SheetAddCommand(
+                        fileName = file.name,
+                        sheetName = "$authorId:blank",
+                        authorId = authorId.toString()
+                ))
+                .exchange().expectStatus().is2xxSuccessful.returnResult(DataSheet::class.java).responseBody.blockFirst()!!
+
+        //Create a Range on an existing Sheet
         val range = DataRange(setOf(DataCell(0, 0, sheet.id.toString()), DataCell(1, 0, sheet.id.toString())))
         val dataReference = RangeReference(fileId = file.id, sheetId = sheet.id.toString(), range = range)
 
-        val command = AddPermissionCommand(
+        //Start sharing File/Sheet/Range reference
+        val command = StartSharingCommand(
                 sharingGroupId = id(),
                 authorId = authorId.toString(),
                 dataReference = dataReference,

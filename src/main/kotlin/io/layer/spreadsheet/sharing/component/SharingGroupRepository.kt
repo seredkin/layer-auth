@@ -1,7 +1,7 @@
 package io.layer.spreadsheet.sharing.component
 
-import io.layer.spreadsheet.sharing.api.AddPermissionCommand
 import io.layer.spreadsheet.sharing.api.DataRange
+import io.layer.spreadsheet.sharing.api.StartSharingCommand
 import io.layer.spreadsheet.sharing.api.DataReference
 import io.layer.spreadsheet.sharing.api.SharingCommandService
 import io.layer.spreadsheet.sharing.api.SharingGroup
@@ -21,13 +21,13 @@ import kotlin.streams.toList
 @Service
 class SharingGroupRepository(private val dataSource: DataSource)
     : SharingQueryService<Stream<SharingGroup>>,
-        SharingCommandService<AddPermissionCommand, DataReference<String, DataRange?>> {
+        SharingCommandService<StartSharingCommand, DataReference<String, DataRange?>> {
     internal val db = { Database.connect(dataSource) }
 
     /**
      * This function CASCADE selects DataReferences from a given level. E.g. FILE selects FILE, its SHEETS and RANGES
      * */
-    override fun fetchByDataReference(dataReference: DataReference<String, DataRange?>): Stream<SharingGroup> = transaction(db()) {
+    override fun byDataReference(dataReference: DataReference<String, DataRange?>): Stream<SharingGroup> = transaction(db()) {
         val dataReferenceList = with(TDataReference) {
             when (dataReference.type()) {
                 DataReference.TYPE_FILE ->
@@ -59,19 +59,19 @@ class SharingGroupRepository(private val dataSource: DataSource)
 
     }
 
-    override fun fetchByAuthorId(authorId: String): Stream<SharingGroup> = transaction(db()) {
+    override fun byAuthorId(authorId: String): Stream<SharingGroup> = transaction(db()) {
         (TSharingGroup innerJoin TDataReference)
                 .select { TSharingGroup.authorId eq UUID.fromString(authorId) }
                 .map { row -> rowToSharingGroup(row, rowToDataReference(row)) }.stream()
     }
 
-    override fun fetchBySharingGroupId(sharingGroupId: String): Stream<SharingGroup> = transaction(db()) {
+    override fun bySharingGroupId(sharingGroupId: String): Stream<SharingGroup> = transaction(db()) {
         (TSharingGroup innerJoin TDataReference)
                 .select { TSharingGroup.id eq UUID.fromString(sharingGroupId) }
                 .map { rowToSharingGroup(it, rowToDataReference(it)) }.stream()
     }
 
-    override fun startSharing(pc: AddPermissionCommand) {
+    override fun startSharing(pc: StartSharingCommand) {
         transaction(db()) {
             val groupUuid = UUID.fromString(pc.sharingGroupId)
             with(TSharingGroup) {
@@ -113,7 +113,7 @@ class SharingGroupRepository(private val dataSource: DataSource)
      *     Removes all SharingGroups and DataReferences by provided DataReference
      */
     override fun stopSharing(dataReference: DataReference<String, DataRange?>): Unit = transaction(db()) {
-        val groupRefs = fetchByDataReference(dataReference).map { UUID.fromString(it.id) }.toList()
+        val groupRefs = byDataReference(dataReference).map { UUID.fromString(it.id) }.toList()
         with(TSharingGroup) {
             deleteWhere { id inList groupRefs }
         }
