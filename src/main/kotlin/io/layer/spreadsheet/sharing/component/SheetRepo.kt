@@ -28,7 +28,7 @@ class SheetRepo(private val dataSource: DataSource) : SheetQueryResolver, SheetC
     }
 
     override fun addDataSheet(sheetAddCommand: SheetAddCommand): DataSheet = transaction(db()) {
-        val sheetUuid = UUID.randomUUID()
+        val sheetUuid = UUID.fromString(sheetAddCommand.id)
         val authorUuid = UUID.fromString(sheetAddCommand.authorId)
         with(TSheetName) {
             insert { row ->

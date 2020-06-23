@@ -33,7 +33,7 @@ class SharingGroupRepository(private val dataSource: DataSource)
                 DataReference.TYPE_FILE ->
                     select { fileId eq dataReference.fileId }
                 DataReference.TYPE_SHEET ->
-                    select { fileId eq dataReference.fileId and (sheetId eq UUID.fromString(dataReference.sheetId)) }
+                    select { sheetId eq UUID.fromString(dataReference.sheetId) }
                 DataReference.TYPE_CELL_SET ->
                     select {
                         fileId eq dataReference.fileId and
