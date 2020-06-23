@@ -28,11 +28,6 @@ private class FunctionalTest {
     lateinit var webClient: WebTestClient
 
     @Test
-    fun pingPong() {
-        webClient.get().uri(RestPaths.ping).exchange().expectStatus().is2xxSuccessful
-    }
-
-    @Test
     fun addWebPermissionTest() {
 
         val authorId = uuid()

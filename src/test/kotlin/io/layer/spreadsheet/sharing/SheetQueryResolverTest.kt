@@ -3,15 +3,16 @@ package io.layer.spreadsheet.sharing
 import io.layer.spreadsheet.sharing.api.SheetAddCommand
 import io.layer.spreadsheet.sharing.api.SheetQuery
 import io.layer.spreadsheet.sharing.api.UserAddCommand
+import io.layer.spreadsheet.sharing.api.id
 import io.layer.spreadsheet.sharing.component.SheetRepo
 import io.layer.spreadsheet.sharing.component.UserRepo
 import org.amshove.kluent.shouldBe
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import java.util.*
 import kotlin.random.Random
-import kotlin.test.assertNotNull
 
 @SpringBootTest(classes = [SharingMicroservice::class])
 class SheetQueryResolverTest {
@@ -35,7 +36,7 @@ class SheetQueryResolverTest {
     @Test
     fun testValidationAndIdGeneration() {
 
-        val testId = Random.nextInt(0, 1_000_000).toString()
+        val testId = id()
         val fileId = "test_fileId $testId"
         val userEmail = "my@$testId.email.com"
         userIdRepo.addUser(UserAddCommand(email = userEmail))
@@ -59,7 +60,7 @@ class SheetQueryResolverTest {
                             authorId = it.authorId.toString()
                     )
             )
-            assertNotNull(dataSheetAndReference)
+            assertTrue(names.contains(dataSheetAndReference.name), "Name is searchable")
         }
 
     }

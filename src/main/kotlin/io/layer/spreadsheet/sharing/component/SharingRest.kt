@@ -41,9 +41,6 @@ class SharingRest(
         return Flux.fromStream(sharingQueryService.byAuthorId(authorId))
     }
 
-    @GetMapping(RestPaths.ping)
-    fun pingPong() = Mono.just("pong")
-
     override fun bySharingGroupId(sharingGroupId: String): Flux<SharingGroup> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
